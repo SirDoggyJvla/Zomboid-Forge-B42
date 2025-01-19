@@ -22,7 +22,7 @@ ZomboidForge.AddZomboids = function(ZTypes)
         chance = SandboxVars.ZomboidForge.ZomboidChance,
 
         -- stats
-        walkType = ZomboidForge.SpeedOptionToWalktype[SandboxVars.ZomboidForge.ZomboidWalktype],
+        walkType = ZomboidForge.SPEED_OPTION_TO_WALKTYPE[SandboxVars.ZomboidForge.ZomboidWalktype],
         strength = SandboxVars.ZomboidForge.ZomboidStrength,
         toughness = SandboxVars.ZomboidForge.ZomboidToughness,
         cognition = SandboxVars.ZomboidForge.ZomboidCognition,

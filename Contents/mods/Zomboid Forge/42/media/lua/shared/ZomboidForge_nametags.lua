@@ -16,7 +16,7 @@ local ZomboidForge = require "ZomboidForge_module"
 require "ISUI/ZombieNametag"
 
 -- caching
-local Configs = ZomboidForge.Configs
+local CONFIGS = ZomboidForge.CONFIGS
 
 -- localy initialize player
 local client_player = getPlayer()
@@ -33,7 +33,7 @@ Events.OnCreatePlayer.Add(initTLOU_OnGameStart)
 ZomboidForge.IsZombieValidForNametag = function(zombie,isBehind,isOnCursor)
     -- test for each options
     -- 1. draw nametag if should always be on
-    if Configs.AlwaysOn
+    if CONFIGS.AlwaysOn
     and (not isClient() or SandboxVars.ZomboidForge.NametagsAlwaysOn)
     and not isBehind and client_player:CanSee(zombie)
     then

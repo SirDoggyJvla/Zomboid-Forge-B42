@@ -34,7 +34,7 @@ local ZombieNametag = ZomboidForge.ZombieNametag
 local isValidForNametag = ZombieNametag.isValidForNametag
 
 -- Mod Options
-local Configs = ZomboidForge.Configs
+local CONFIGS = ZomboidForge.CONFIGS
 
 -- other
 local zombieList
@@ -99,7 +99,7 @@ end
 ---@param zombie IsoZombie
 ZomboidForge.OnZombieCreate = function(zombie)
     -- remove zombie from nametag list
-    ZomboidForge.nametagList[zombie] = nil
+    ZomboidForge.NAMETAG_LIST[zombie] = nil
     if not IsZombieValid(zombie) then return end
 
     -- delay initialization until pID is properly initialized by the game
@@ -110,7 +110,7 @@ ZomboidForge.OnZombieCreate = function(zombie)
     })
 
     -- delay setting visuals
-    table.insert(ZomboidForge.ZombiesWaitingForInitialization,zombie)
+    table.insert(ZomboidForge.ZOMBIES_WAITING_FOR_INITIALIZATION,zombie)
 end
 
 
@@ -123,7 +123,6 @@ end
 ---Handle everything related to zombie updates.
 ---@param zombie IsoZombie
 ZomboidForge.OnZombieUpdate = function(zombie)
-    -- print(zombie:getVariableBoolean("isInfected"))
     if not IsZombieValid(zombie) then return end
 
     -- get zombie type
@@ -138,8 +137,6 @@ ZomboidForge.OnZombieUpdate = function(zombie)
             onZombieUpdate[j](zombie,ZType,ZombieTable)
         end
     end
-
-
 
     --- DETECTING THUMP ---
 
@@ -164,15 +161,39 @@ ZomboidForge.OnZombieUpdate = function(zombie)
 
     local target = zombie:getTarget()
     local attackOutcome = nonPersistentZData.attackOutcome
+    local attacking,hitReaction
     -- local currentAttackOutcome = zombie:getVariableString("AttackOutcome")
     if target then
+        ---@cast target IsoGameCharacter
+
         local currentAttackOutcome = zombie:getVariableString("AttackOutcome")
         if currentAttackOutcome ~= "" and attackOutcome ~= currentAttackOutcome then
             nonPersistentZData.attackOutcome = currentAttackOutcome
-            triggerEvent("OnZombieHitCharacter",zombie,target,currentAttackOutcome)
+            hitReaction = target:getHitReaction()
+            triggerEvent("OnZombieHitCharacter",zombie,target,currentAttackOutcome,hitReaction)
+            attacking = true
         end
     elseif attackOutcome then
         nonPersistentZData.attackOutcome = nil
+    end
+
+
+    --- HANDLE VOICE
+
+    -- play vocals
+    local vocals = ZomboidForge.ChoseInData(ZombieTable.customVoice,zombie:isFemale())
+    if vocals then
+        if hitReaction and hitReaction == "Bite" then
+            ZomboidForge.PlayVocals(zombie,vocals,"bite")
+        elseif attacking then
+            ZomboidForge.PlayVocals(zombie,vocals,"attack")
+        elseif target then
+            ZomboidForge.PlayVocals(zombie,vocals,"aggro")
+        elseif zombie:getEatBodyTarget() then
+            ZomboidForge.PlayVocals(zombie,vocals,"eating")
+        else
+            ZomboidForge.PlayVocals(zombie,vocals,"idle")
+        end
     end
 end
 
@@ -201,24 +222,24 @@ ZomboidForge.OnTick = function(tick)
     local zombieList_size = zombieList:size()
 
     --- UPDATE NAMETAG VARIABLES ---
-    local showNametag = SandboxVars.ZomboidForge.Nametags and Configs.ShowNametag
+    local showNametag = SandboxVars.ZomboidForge.Nametags and CONFIGS.ShowNametag
     if showNametag then
         -- zombies on cursor
-        ZomboidForge.zombiesOnCursor = ZomboidForge.GetZombiesOnCursor(Configs.Radius)
+        ZomboidForge.ZOMBIES_ON_CURSOR = ZomboidForge.GetZOMBIES_ON_CURSOR(CONFIGS.Radius)
 
         -- visible zombies
-        local zombiesInFov = {}
+        local ZOMBIES_IN_FOV = {}
         local spottedMovingObjects = client_player:getSpottedList()
 
         -- check the objects which are visible zombies
         for i = 0, spottedMovingObjects:size() - 1 do
             local spottedMovingObject = spottedMovingObjects:get(i)
             if instanceof(spottedMovingObject, "IsoZombie") then
-                zombiesInFov[spottedMovingObject] = true
+                ZOMBIES_IN_FOV[spottedMovingObject] = true
             end
         end
 
-        ZomboidForge.zombiesInFov = zombiesInFov
+        ZomboidForge.ZOMBIES_IN_FOV = ZOMBIES_IN_FOV
     end
 
 
@@ -232,6 +253,28 @@ ZomboidForge.OnTick = function(tick)
         -- get zombie data
         local ZType = ZomboidForge.GetZType(zombie)
         local ZombieTable = ZomboidForge.ZTypes[ZType]
+
+
+        --- REMOVE VANILLA VOICE
+
+        local voice = ZomboidForge.ChoseInData(ZombieTable.customVoice,zombie:isFemale())
+        if voice then
+            local zombieEmitter = zombie:getEmitter()
+
+            -- verify zombie is not playing one of its voice
+            local pass = false
+            for _,voiceEntry in pairs(voice) do
+                if zombieEmitter:isPlaying(voiceEntry) then
+                    pass = true
+                end
+            end
+
+            -- stop vanilla emitters
+            if not pass then
+                zombieEmitter:stopAll()
+            end
+        end
+
 
         --- ONTICK CUSTOM BEHAVIOR ---
 
@@ -252,15 +295,15 @@ ZomboidForge.OnTick = function(tick)
         if not showNametag or not ZombieTable.name then break end
 
         -- check if zombie should update
-        local isBehind = not ZomboidForge.zombiesInFov[zombie]
-        local isOnCursor = ZomboidForge.zombiesOnCursor[zombie]
+        local isBehind = not ZomboidForge.ZOMBIES_IN_FOV[zombie]
+        local isOnCursor = ZomboidForge.ZOMBIES_ON_CURSOR[zombie]
         local valid = isValidForNametag(zombie,isBehind,isOnCursor)
 
-        local zombieNametag = ZomboidForge.nametagList[zombie]
+        local zombieNametag = ZomboidForge.NAMETAG_LIST[zombie]
         if zombieNametag then
             zombieNametag:update(valid,isBehind)
         elseif valid then
-            ZomboidForge.nametagList[zombie] = ZombieNametag:new(zombie,ZombieTable)
+            ZomboidForge.NAMETAG_LIST[zombie] = ZombieNametag:new(zombie,ZombieTable)
         end
     until true end
 end
@@ -296,7 +339,7 @@ ZomboidForge.OnZombieDead = function(zombie)
 
     -- delete zombie data
     ZomboidForge.ResetNonPersistentZData(zombie)
-    ZomboidForge.nametagList[zombie] = nil
+    ZomboidForge.NAMETAG_LIST[zombie] = nil
 end
 
 
@@ -359,6 +402,16 @@ ZomboidForge.OnCharacterHitZombie = function(attacker, zombie, handWeapon, damag
         end
     end
 
+    -- play vocals
+    local vocals = ZomboidForge.ChoseInData(ZombieTable.customVoice,zombie:isFemale())
+    if vocals then
+        if handPush then
+            ZomboidForge.PlayVocals(zombie,vocals,"pushed",true,true)
+        else
+            ZomboidForge.PlayVocals(zombie,vocals,"hurt",true,true)
+        end
+    end
+
     ZomboidForge.SetPreOnHitStats(zombie,ZombieTable)
 
     -- run custom behavior functions for this zombie
@@ -381,8 +434,8 @@ ZomboidForge.OnWeaponHitXp = function(attacker, weapon, zombie, damage)
     local ZombieTable = ZomboidForge.ZTypes[ZType]
 
     -- show nametag
-    if SandboxVars.ZomboidForge.Nametags and Configs.ShowNametag then
-        ZomboidForge.nametagList[zombie] = ZombieNametag:new(zombie,ZombieTable)
+    if SandboxVars.ZomboidForge.Nametags and CONFIGS.ShowNametag then
+        ZomboidForge.NAMETAG_LIST[zombie] = ZombieNametag:new(zombie,ZombieTable)
     end
 
     -- update post attack stats
@@ -397,20 +450,20 @@ ZomboidForge.OnWeaponHitXp = function(attacker, weapon, zombie, damage)
     end
 end
 
-ZomboidForge.OnZombieHitCharacter = function(zombie,victim,attackOutcome)
+ZomboidForge.OnZombieHitCharacter = function(zombie,victim,attackOutcome,hitReaction)
     local ZType = ZomboidForge.GetZType(zombie)
     local ZombieTable = ZomboidForge.ZTypes[ZType]
 
     -- show nametag
-    if attackOutcome == "start" and SandboxVars.ZomboidForge.Nametags and Configs.ShowNametag and Configs.WhenZombieIsAttacking then
-        ZomboidForge.nametagList[zombie] = ZombieNametag:new(zombie,ZombieTable)
+    if attackOutcome == "start" and SandboxVars.ZomboidForge.Nametags and CONFIGS.ShowNametag and CONFIGS.WhenZombieIsAttacking then
+        ZomboidForge.NAMETAG_LIST[zombie] = ZombieNametag:new(zombie,ZombieTable)
     end
 
     -- run custom behavior functions for this zombie
     local onZombieHitCharacter = ZombieTable.onZombieHitCharacter
     if onZombieHitCharacter then
         for i = 1,#onZombieHitCharacter do
-            onZombieHitCharacter[i](zombie,victim,attackOutcome,victim:getHitReaction())
+            onZombieHitCharacter[i](zombie,victim,attackOutcome,hitReaction)
         end
     end
 end

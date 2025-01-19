@@ -15,9 +15,9 @@ Zombie nametag Lua object for ZomboidForge
 local ZomboidForge = require "ZomboidForge_module"
 
 -- caching
-local Configs = ZomboidForge.Configs
-local FONT_LIST = Configs.FONT_LIST
-local nametagList = ZomboidForge.nametagList
+local CONFIGS = ZomboidForge.CONFIGS
+local FONT_LIST = CONFIGS.FONT_LIST
+local NAMETAG_LIST = ZomboidForge.NAMETAG_LIST
 local XToScreen = IsoUtils.XToScreen
 local YToScreen = IsoUtils.YToScreen
 local getOffX = IsoCamera.getOffX
@@ -45,7 +45,7 @@ local ZombieNametag = ZomboidForge.ZombieNametag
 ZombieNametag.isValidForNametag = function(zombie,isBehind,isOnCursor)
     -- test for each options
     -- 1. draw nametag if should always be on
-    if Configs.AlwaysOn
+    if CONFIGS.AlwaysOn
     and (not isClient() or SandboxVars.ZomboidForge.NametagsAlwaysOn)
     and not isBehind and client_player:CanSee(zombie)
     then
@@ -62,7 +62,7 @@ ZombieNametag.isValidForNametag = function(zombie,isBehind,isOnCursor)
         return true
 
     -- 4. zombie is targeting client
-    elseif Configs.WhenZombieIsTargeting then
+    elseif CONFIGS.WhenZombieIsTargeting then
         local target = zombie:getTarget()
         if target and target == client_player then
             return true
@@ -105,7 +105,7 @@ function ZombieNametag:update(valid,isBehind)
     sy = sy - getOffY() - zombie:getOffsetY()
 
     -- apply client vertical placement
-    sy = sy - 110 - 10*Configs.VerticalOffset
+    sy = sy - 110 - 10*CONFIGS.VerticalOffset
 
     -- apply zoom level
     local zoom = core:getZoom(0)
@@ -129,7 +129,7 @@ end
 
 ---Stop handling this zombie's nametag.
 function ZombieNametag:stop()
-    nametagList[self.zombie] = nil
+    NAMETAG_LIST[self.zombie] = nil
 end
 
 function ZombieNametag:new(zombie,ZombieTable)
@@ -139,7 +139,7 @@ function ZombieNametag:new(zombie,ZombieTable)
 
     -- main caracteristics
 	o.zombie = zombie
-    local duration = ZombieTable.nametagDuration or Configs.NametagDuration
+    local duration = ZombieTable.nametagDuration or CONFIGS.NametagDuration
     o.duration = duration*60
     o.tick = duration*60
 
@@ -147,13 +147,13 @@ function ZombieNametag:new(zombie,ZombieTable)
     local textDrawObject = TextDrawObject.new()
 
     -- apply string with font
-    local font = Configs.Font
+    local font = CONFIGS.Font
     textDrawObject:ReadString(UIFont[FONT_LIST[font]], getText(ZombieTable.name), -1)
 
     -- visual
     o.color = ZombieTable.color or {255,255,255}
     o.outline = ZombieTable.outline or {255,255,255}
-    if Configs.Background then
+    if CONFIGS.Background then
         textDrawObject:setDrawBackground(true)
     end
 

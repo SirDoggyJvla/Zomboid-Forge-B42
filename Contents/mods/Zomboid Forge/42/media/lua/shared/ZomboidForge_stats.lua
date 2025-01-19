@@ -25,6 +25,10 @@ local parseUnsignedLong = Long.parseUnsignedLong --[[@as Function]]
 local string = string
 local table = table
 
+-- initialize getTime method
+GameTime.setServerTimeShift(0) -- necessary to be able to use the following function
+local getTime = GameTime.getServerTime -- cache the function to save some overhead
+
 -- check for activated mods
 local activatedMod_Bandits = getActivatedMods():contains("\\Bandits")
 
@@ -166,41 +170,41 @@ end
 ---Initialize the zombies that are waiting for initialization only when their model was first activated.
 ---This is required because setting any visuals, clothings etc will get reset right after the first model activation.
 ZomboidForge.InitializeZombiesVisuals = function()
-    local ZombiesWaitingForInitialization = ZomboidForge.ZombiesWaitingForInitialization
-    local ZombiesChangeVisualsNextTick = ZomboidForge.ZombiesChangeVisualsNextTick
+    local ZOMBIES_WAITING_FOR_INITIALIZATION = ZomboidForge.ZOMBIES_WAITING_FOR_INITIALIZATION
+    local ZOMBIES_CHANGE_VISUALS_NEXT_TICK = ZomboidForge.ZOMBIES_CHANGE_VISUALS_NEXT_TICK
 
     --- DETECT A ZOMBIE THAT IS VALID FOR SETTING VISUALS
 
-    for i = #ZombiesWaitingForInitialization,1,-1 do repeat
+    for i = #ZOMBIES_WAITING_FOR_INITIALIZATION,1,-1 do repeat
         -- get zombie
-        local zombie = ZombiesWaitingForInitialization[i]
+        local zombie = ZOMBIES_WAITING_FOR_INITIALIZATION[i]
 
         -- verify if valid for visuals
         if not zombie:hasActiveModel() then
             -- stop checking this zombie, it got recycled
             if zombie:getPersistentOutfitID() == 0 then
-                table.remove(ZombiesWaitingForInitialization,i)
+                table.remove(ZOMBIES_WAITING_FOR_INITIALIZATION,i)
             end
             break
         end
 
-        table.insert(ZombiesChangeVisualsNextTick,zombie)
+        table.insert(ZOMBIES_CHANGE_VISUALS_NEXT_TICK,zombie)
 
         -- zombie doesn't need to be set later
-        table.remove(ZombiesWaitingForInitialization,i)
+        table.remove(ZOMBIES_WAITING_FOR_INITIALIZATION,i)
     until true end
 
 
 
     --- SET VISUALS FOR VALID ZOMBIES ---
 
-    for i = #ZombiesChangeVisualsNextTick,1,-1 do repeat
+    for i = #ZOMBIES_CHANGE_VISUALS_NEXT_TICK,1,-1 do repeat
         -- get zombie
-        local zombie = ZombiesChangeVisualsNextTick[i]
+        local zombie = ZOMBIES_CHANGE_VISUALS_NEXT_TICK[i]
 
         -- stop checking this zombie, it got recycled
         if zombie:getPersistentOutfitID() == 0 then
-            table.remove(ZombiesChangeVisualsNextTick,i)
+            table.remove(ZOMBIES_CHANGE_VISUALS_NEXT_TICK,i)
             break
         end
 
@@ -208,7 +212,7 @@ ZomboidForge.InitializeZombiesVisuals = function()
         ZomboidForge.InitializeZombieVisuals(zombie)
 
         -- zombie doesn't need to be set later
-        table.remove(ZombiesChangeVisualsNextTick,i)
+        table.remove(ZOMBIES_CHANGE_VISUALS_NEXT_TICK,i)
     until true end
 end
 
@@ -237,7 +241,7 @@ end
 ---@param female boolean
 ZomboidForge.SetStats = function(zombie,ZombieTable,female)
     -- update sandbox options with new zombie stats
-    for sandboxOptionName,sandboxOptionData in pairs(ZomboidForge.SandboxOptionsStats) do
+    for sandboxOptionName,sandboxOptionData in pairs(ZomboidForge.SANDBOX_OPTIONS_STATS) do
         local value = ZomboidForge.ChoseInData(ZombieTable[sandboxOptionName],female)
         getSandboxOptions():set(sandboxOptionData.setSandboxOption,value)
     end
@@ -279,7 +283,7 @@ end
 ---@param female boolean
 ZomboidForge.SetUniqueData = function(zombie,ZombieTable,female)
     -- set ZombieData
-    for key,data in pairs(ZomboidForge.ZombieDataToSet) do
+    for key,data in pairs(ZomboidForge.ZOMBIE_DATA_TO_SET) do
         local current_fct = data.current
         local current = current_fct and current_fct(zombie)
         local choice = ZomboidForge.ChoseInData(ZombieTable[key],female,current)
@@ -536,4 +540,69 @@ ZomboidForge.SetPostOnHitStats = function(zombie,attacker,ZombieTable,weapon,dam
         zombie:setKnockedDown(false)
         zombie:setStaggerBack(false)
     end
+end
+
+
+
+--- CUSTOM ZOMBIE VOCALS
+
+local priority = {
+    hurt = 1,
+    pushed = 2,
+    bite = 3,
+    attack = 4,
+    swing = 5,
+    aggro = 6,
+    reanimate = 7,
+    transition = 8,
+    gore = 9,
+    eating = 10,
+    idle = 11,
+}
+
+ZomboidForge.PlayVocals = function(zombie,voice,type,_force,_force_isPlayingSkip)
+    -- verify zombie has this type of voice
+    local voiceType = voice[type]
+    if not voiceType then return end
+
+    -- stop precedent emitter
+    local zombieEmitter = zombie:getEmitter()
+    if _force then
+        if _force_isPlayingSkip and zombieEmitter:isPlaying(voiceType) then
+            return
+        end
+        zombieEmitter:stopAll()
+    elseif zombieEmitter:isPlaying(voiceType) then
+        return
+    else
+        -- verify zombie is not playing one of its emitters
+        local pass = false
+        local precedentPriority = 20
+        local VOCAL_PRIORITY = ZomboidForge.VOCAL_PRIORITY
+        for type,voiceEntry in pairs(voice) do
+            if zombieEmitter:isPlaying(voiceEntry) then
+                local priority_k = VOCAL_PRIORITY[type]
+                if priority_k > precedentPriority then
+                    print(type)
+                    precedentPriority = priority_k
+                    pass = true
+                end
+            end
+        end
+
+        if pass then zombieEmitter:stopAll() end
+
+        local nonPersistentZData = ZomboidForge.GetNonPersistentZData(zombie)
+        local voiceTime = nonPersistentZData.voiceTime
+        local currentTime = getTime()/1000000000
+        if voiceTime and currentTime - voiceTime < 5 then
+            return
+        end
+
+        nonPersistentZData.voiceTime = currentTime
+    end
+
+    -- maybe add a check for distance
+
+    zombieEmitter:playVocals(voice[type])
 end

@@ -16,7 +16,7 @@ local ZomboidForge = require "ZomboidForge_module"
 local random = newrandom()
 
 -- caching
-local Configs = ZomboidForge.Configs
+local CONFIGS = ZomboidForge.CONFIGS
 
 
 -- localy initialize player
@@ -75,6 +75,7 @@ ZomboidForge.RandomWeighted = function(tbl)
     -- get totalWeight
     local totalWeight = 0
     for _,v in pairs(tbl) do
+        if type(v) ~= "number" then return tbl end
         totalWeight = totalWeight + v
     end
 
@@ -191,11 +192,11 @@ end
 -- Zombies that are around the client radius cursor will be valid to show their nametags.
 -- This takes into account zombies on different levels.
 ---@return table
-ZomboidForge.GetZombiesOnCursor = function(radius)
-    local zombiesOnCursor = {}
+ZomboidForge.GetZOMBIES_ON_CURSOR = function(radius)
+    local ZOMBIES_ON_CURSOR = {}
 
     local aiming = client_player:isAiming()
-    if not Configs.NoAimingNeeded and not aiming then return zombiesOnCursor end
+    if not CONFIGS.NoAimingNeeded and not aiming then return ZOMBIES_ON_CURSOR end
 
     -- get cursor coordinates
     local mouseX, mouseY = ISCoordConversion.ToWorld(getMouseXScaled(), getMouseYScaled(), 0)
@@ -213,7 +214,7 @@ ZomboidForge.GetZombiesOnCursor = function(radius)
                         for i = 0, movingObjects:size() -1 do
                             local zombie = movingObjects:get(i)
                             if zombie and instanceof(zombie,"IsoZombie") then
-                                zombiesOnCursor[zombie] = true
+                                ZOMBIES_ON_CURSOR[zombie] = true
                             end
                         end
                     end
@@ -222,7 +223,7 @@ ZomboidForge.GetZombiesOnCursor = function(radius)
         end
     end
 
-    return zombiesOnCursor
+    return ZOMBIES_ON_CURSOR
 end
 
 

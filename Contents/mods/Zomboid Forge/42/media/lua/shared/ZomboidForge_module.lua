@@ -23,13 +23,13 @@ local ZomboidForge = {
     ZTypes = {},
 
     --- INITIALIZING ZOMBIE ---
-    ZombiesWaitingForInitialization = {},
-    ZombiesChangeVisualsNextTick = {},
+    ZOMBIES_WAITING_FOR_INITIALIZATION = {},
+    ZOMBIES_CHANGE_VISUALS_NEXT_TICK = {},
 
 
     --- MOD OPTIONS ---
 
-    Configs = {
+    CONFIGS = {
         FONT_LIST = {
             "Handwritten",
             "Small",
@@ -67,15 +67,30 @@ local ZomboidForge = {
 
     --- NAMETAG ---
 
-    nametagList = {},
-    zombiesInFov = {},
-    zombiesOnCursor = {},
+    NAMETAG_LIST = {},
+    ZOMBIES_IN_FOV = {},
+    ZOMBIES_ON_CURSOR = {},
 
+
+    --- ZOMBIE VOCALS ---
+    VOCAL_PRIORITY = {
+        hurt = 1,
+        pushed = 2,
+        bite = 3,
+        attack = 4,
+        swing = 5,
+        aggro = 6,
+        reanimate = 7,
+        transition = 8,
+        gore = 9,
+        eating = 10,
+        idle = 11,
+    },
 
     --- ZOMBIE STATS ---
 
     -- Sandbox option equivalent to walkType variables
-    SpeedOptionToWalktype = {
+    SPEED_OPTION_TO_WALKTYPE = {
         -- sprinter
         [1] = {"sprint1","sprint2","sprint3","sprint4","sprint5"},
         -- fast shambler
@@ -100,7 +115,7 @@ local ZomboidForge = {
         }
     },
 
-    SandboxOptionsStats = {
+    SANDBOX_OPTIONS_STATS = {
         -- defines the sight setting
         sight = {
             setSandboxOption = "ZombieLore.Sight",
@@ -176,7 +191,7 @@ local ZomboidForge = {
 
 
     -- used to set the various visuals/data of zombies
-    ZombieDataToSet = {
+    ZOMBIE_DATA_TO_SET = {
         ["outfit"] = {
             current = function(zombie)
                 return zombie:getOutfitName()

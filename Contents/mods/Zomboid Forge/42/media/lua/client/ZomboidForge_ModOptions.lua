@@ -13,7 +13,7 @@ Core of ZomboidForge
 
 -- requirements
 local ZomboidForge = require "ZomboidForge_module"
-local Configs = ZomboidForge.Configs
+local CONFIGS = ZomboidForge.CONFIGS
 
 local options = PZAPI.ModOptions:create("ZomboidForge", "Zomboid Forge")
 
@@ -95,7 +95,7 @@ options:addSlider(
 )
 
 -- Fonts
-local FONT_LIST = Configs.FONT_LIST
+local FONT_LIST = CONFIGS.FONT_LIST
 local comboBox = options:addComboBox("Font",getText("IGUI_ZomboidForge_Fonts"),getText("IGUI_ZomboidForge_Fonts_Tooltip"))
 comboBox:addItem(FONT_LIST[1],true) -- add first in the list as default
 for i = 2,#FONT_LIST do
@@ -113,10 +113,10 @@ options.apply = function(self)
     for k,v in pairs(self.dict) do
         if v.type == "multipletickbox" then
             for i=1, #v.values do
-                Configs[(k.."_"..tostring(i))] = v:getValue(i)
+                CONFIGS[(k.."_"..tostring(i))] = v:getValue(i)
             end
         elseif v.type ~= "button" then
-            Configs[k] = v:getValue()
+            CONFIGS[k] = v:getValue()
         end
     end
 end
