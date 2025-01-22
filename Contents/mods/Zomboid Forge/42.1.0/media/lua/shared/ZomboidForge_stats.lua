@@ -546,20 +546,6 @@ end
 
 --- CUSTOM ZOMBIE VOCALS
 
-local priority = {
-    hurt = 1,
-    pushed = 2,
-    bite = 3,
-    attack = 4,
-    swing = 5,
-    aggro = 6,
-    reanimate = 7,
-    transition = 8,
-    gore = 9,
-    eating = 10,
-    idle = 11,
-}
-
 ZomboidForge.PlayVocals = function(zombie,voice,type,_force,_force_isPlayingSkip)
     -- verify zombie has this type of voice
     local voiceType = voice[type]
