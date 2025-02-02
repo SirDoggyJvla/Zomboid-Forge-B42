@@ -56,14 +56,6 @@ Events.OnCreatePlayer.Add(initTLOU_OnGameStart)
 
 --- OnLoad function to initialize the mod
 ZomboidForge.OnLoad = function()
-
-
-    -- getFMODSoundBank():addSound(soundProperties.alias, soundProperties.file, soundProperties.gain, soundProperties.minrange, soundProperties.maxrange, soundProperties.maxreverbrange, soundProperties.reverbfactor, soundProperties.priority, soundProperties.looped)
-
-
-
-
-
     -- reset ZTypes
     ZomboidForge.ZTypes = {}
 
@@ -98,11 +90,11 @@ end
 ---Detect when a zombie gets loaded in and initialize it.
 ---@param zombie IsoZombie
 ZomboidForge.OnZombieCreate = function(zombie)
+    zombie:getEmitter():stopAll() -- force stop custom emitters
+
     -- remove zombie from nametag list
     ZomboidForge.NAMETAG_LIST[zombie] = nil
     if not IsZombieValid(zombie) then return end
-
-    zombie:getEmitter():stopAll()
 
     -- delay initialization until pID is properly initialized by the game
     AddNewDelayedAction({
@@ -184,6 +176,8 @@ ZomboidForge.OnZombieUpdate = function(zombie)
 
     -- play vocals
     local vocals = ZomboidForge.ChoseInData(ZombieTable.customVoice,zombie:isFemale())
+    ---TODO:
+    ---if a vocal doesn't exist, it stops other lower priority ones from playing
     if vocals then
         if hitReaction and hitReaction == "Bite" then
             ZomboidForge.PlayVocals(zombie,vocals,"bite")

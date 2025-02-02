@@ -208,7 +208,6 @@ end
 ---Handles nametag and updating delayed actions.
 ---@param tick int
 ZomboidForge.OnTick = function(tick)
-    -- print("new tick: "..tostring(tick))
     -- update delayed actions
     UpdateDelayedActions()
 

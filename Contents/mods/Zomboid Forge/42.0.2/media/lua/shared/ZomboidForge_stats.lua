@@ -568,27 +568,30 @@ ZomboidForge.PlayVocals = function(zombie,voice,type,_force,_force_isPlayingSkip
     -- stop precedent emitter
     local zombieEmitter = zombie:getEmitter()
     if _force then
+        -- skip if already playing
         if _force_isPlayingSkip and zombieEmitter:isPlaying(voiceType) then
             return
         end
-        zombieEmitter:stopAll()
+
+        zombieEmitter:stopAll() -- force stop emitter
+
+    -- skip if already playing voice
     elseif zombieEmitter:isPlaying(voiceType) then
         return
     else
         -- verify zombie is not playing one of its emitters
-        local pass = false
-        local precedentPriority = 20
-        local VOCAL_PRIORITY = ZomboidForge.VOCAL_PRIORITY
-        for type,voiceEntry in pairs(voice) do
-            if zombieEmitter:isPlaying(voiceEntry) then
-                local priority_k = VOCAL_PRIORITY[type]
-                if priority_k > precedentPriority then
-                    print(type)
-                    precedentPriority = priority_k
-                    pass = true
-                end
-            end
-        end
+        -- local pass = false
+        -- local precedentPriority = 20
+        -- local VOCAL_PRIORITY = ZomboidForge.VOCAL_PRIORITY
+        -- for type,voiceEntry in pairs(voice) do
+        --     if zombieEmitter:isPlaying(voiceEntry) then
+        --         local priority_k = VOCAL_PRIORITY[type]
+        --         if priority_k > precedentPriority then
+        --             precedentPriority = priority_k
+        --             pass = true
+        --         end
+        --     end
+        -- end
 
         if pass then zombieEmitter:stopAll() end
 
@@ -604,5 +607,6 @@ ZomboidForge.PlayVocals = function(zombie,voice,type,_force,_force_isPlayingSkip
 
     -- maybe add a check for distance
 
+    zombieEmitter:stopAll()
     zombieEmitter:playVocals(voice[type])
 end

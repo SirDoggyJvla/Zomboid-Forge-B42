@@ -33,8 +33,6 @@ local getTime = GameTime.getServerTime -- cache the function to save some overhe
 local activatedMod_Bandits = getActivatedMods():contains("\\Bandits")
 
 
-
-
 --- ZOMBIE IDENTIFICATION ---
 
 -- Check if zombie is valid to be handled by Zomboid Forge.
@@ -49,7 +47,7 @@ ZomboidForge.IsZombieValid = function(zombie)
     -- check if `zombie` is a bandit
     if activatedMod_Bandits then
         local brain = BanditBrain.Get(zombie)
-        if zombie:getVariableBoolean("Bandit") or brain then
+        if zombie:getVariableBoolean("Bandit") or brain or zombie:getModData().IsBandit then
             return false
         end
         local gmd = GetBanditModData()
@@ -143,6 +141,8 @@ end
 
 
 ZomboidForge.InitializeZombie = function(zombie)
+    if not ZomboidForge.IsZombieValid(zombie) then return end
+
     --- INITIALIZE ZOMBIE DATA ---
     local ZType = ZomboidForge.GetZType(zombie)
     local ZombieTable = ZomboidForge.ZTypes[ZType]
@@ -220,8 +220,9 @@ end
 ---Initialize the zombie visuals and other data and informations.
 ---@param zombie IsoZombie
 ZomboidForge.InitializeZombieVisuals = function(zombie)
+    if not ZomboidForge.IsZombieValid(zombie) then return end
+
     --- INITIALIZE ZOMBIE DATA ---
-    local nonPersistentZData = ZomboidForge.GetNonPersistentZData(zombie)
     local ZType = ZomboidForge.GetZType(zombie)
     local ZombieTable = ZomboidForge.ZTypes[ZType]
 
@@ -271,7 +272,6 @@ ZomboidForge.SetVisuals = function(zombie,ZombieTable,female)
     if clothingVisuals then
         ZomboidForge.ChangeClothings(zombie,clothingVisuals,female)
     end
-
 
     -- necessary to show the various visual changes
     zombie:resetModel()
@@ -554,30 +554,16 @@ ZomboidForge.PlayVocals = function(zombie,voice,type,_force,_force_isPlayingSkip
     -- stop precedent emitter
     local zombieEmitter = zombie:getEmitter()
     if _force then
+        -- skip if already playing
         if _force_isPlayingSkip and zombieEmitter:isPlaying(voiceType) then
             return
         end
-        zombieEmitter:stopAll()
+
+    -- skip if already playing voice
     elseif zombieEmitter:isPlaying(voiceType) then
         return
     else
-        -- verify zombie is not playing one of its emitters
-        local pass = false
-        local precedentPriority = 20
-        local VOCAL_PRIORITY = ZomboidForge.VOCAL_PRIORITY
-        for type,voiceEntry in pairs(voice) do
-            if zombieEmitter:isPlaying(voiceEntry) then
-                local priority_k = VOCAL_PRIORITY[type]
-                if priority_k > precedentPriority then
-                    print(type)
-                    precedentPriority = priority_k
-                    pass = true
-                end
-            end
-        end
-
-        if pass then zombieEmitter:stopAll() end
-
+        -- skip if voice was played in the last 5 seconds
         local nonPersistentZData = ZomboidForge.GetNonPersistentZData(zombie)
         local voiceTime = nonPersistentZData.voiceTime
         local currentTime = getTime()/1000000000
@@ -590,5 +576,6 @@ ZomboidForge.PlayVocals = function(zombie,voice,type,_force,_force_isPlayingSkip
 
     -- maybe add a check for distance
 
+    zombieEmitter:stopAll()
     zombieEmitter:playVocals(voice[type])
 end

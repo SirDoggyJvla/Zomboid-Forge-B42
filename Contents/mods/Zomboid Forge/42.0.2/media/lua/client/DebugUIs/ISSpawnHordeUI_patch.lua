@@ -12,8 +12,6 @@ local ISSpawnHordeUI_createChildren = ISSpawnHordeUI.createChildren
 function ISSpawnHordeUI:createChildren()
     ISSpawnHordeUI_createChildren(self)
 
-    print(self.x)
-
     local x = UI_BORDER_SPACING+1
 	local btnWid = 100
 	local y = self:titleBarHeight() + UI_BORDER_SPACING
