@@ -11,7 +11,9 @@ Patch to Bandits to finally fix Bandits having the ZType visuals and stats.
 ]]--
 --[[ ================================================ ]]--
 
-require "BanditClienCommands"
+if not getActivatedMods():contains("\\Bandits") then return end
+
+require "BanditClientCommands"
 
 BanditServer.Commands.SpawnGroup = function(player, event)
     local radius = 0.5

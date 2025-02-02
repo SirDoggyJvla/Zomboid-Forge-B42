@@ -547,6 +547,11 @@ end
 --- CUSTOM ZOMBIE VOCALS
 
 ZomboidForge.PlayVocals = function(zombie,voice,type,_force,_force_isPlayingSkip)
+    -- limit sound played by distance
+    local player = getPlayer()
+    local distanceFromClient = (zombie:getX() - player:getX())^2 + (zombie:getY() - player:getY())^2
+    if distanceFromClient > 196 then return end
+
     -- verify zombie has this type of voice
     local voiceType = voice[type]
     if not voiceType then return end
